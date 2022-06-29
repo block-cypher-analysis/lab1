@@ -3,59 +3,52 @@ package ua.kpi;
 import org.apache.commons.math3.util.Pair;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-/**
- * Hello world!
- */
+
 public class App {
+
+    private static final int[] keys = new int[] {
+            Integer.parseInt("0011000100110110", 2)
+        , Integer.parseInt("0011001000110110", 2)
+        , Integer.parseInt("0011001100110110", 2)
+        , Integer.parseInt("0011010000110110", 2)
+        , Integer.parseInt("0011010100110110", 2)
+        , Integer.parseInt("0011011000110110", 2)
+        , Integer.parseInt("0011011100110110", 2)};
+
+    private static final Heys h = new Heys();
+
     public static void main(String[] args) throws IOException, ExecutionException, InterruptedException {
-        System.out.println("Hello World! " + Runtime.getRuntime().availableProcessors());
+        System.out.println("Processors " + Runtime.getRuntime().availableProcessors());
 
         var t1 = System.nanoTime() / 1000000000.;
         var h = new Heys();
-        var keys = new int[7];
-        keys[0] = Integer.parseInt("0011000100110110", 2);
-        keys[1] = Integer.parseInt("0011001000110110", 2);
-        keys[2] = Integer.parseInt("0011001100110110", 2);
-        keys[3] = Integer.parseInt("0011010000110110", 2);
-        keys[4] = Integer.parseInt("0011010100110110", 2);
-        keys[5] = Integer.parseInt("0011011000110110", 2);
-        keys[6] = Integer.parseInt("0011011100110110", 2);
-
 
         var ct = h.encryptBlock(Integer.parseInt("0011000101100001", 2), keys);
+        System.out.println("ct: " + Long.toString(ct, 16) + "(hex), " + Long.toString(ct, 2) + "(bin)");
 
-        System.out.println("ct " + ct);
-        System.out.println("ct " + Long.toString(ct, 16));
-        System.out.println("ct " + Long.toString(ct, 2));
+
+        var sboxDdt = h.computeSboxDdt();
+        System.out.println("sbox ddt " + Arrays.stream(sboxDdt).map(Arrays::toString).collect(Collectors.joining(", ")));
 
         var ddt = h.computeRoundDdt();
-
-
-        System.out.println("ddt done " + ddt);
         System.out.println("ddt done ");
-        // ddt.forEach((key, value) -> System.out.println(key + ":" + value));
-        System.out.println("ddt done ");
-
-        // ddt.forEach((key, value) -> System.out.println(key + ":" +
-        //        value.entrySet().stream().map(p -> p.getKey() + ":" + p.getValue()).collect(Collectors.joining(","))));
 
         var pMins = new double[]{0.01, 0.01, 0.001, 3.8e-05, 3.8e-06, 3.8e-06, 3.8e-06};
         var ds = new DifferentialSearch(13);
-        var res = ds.search(ddt, pMins);
-        var maxDiff = res.get(4).entrySet().stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+        var searchResult = ds.search(ddt, pMins);
+        var maxDiffForKeySearch = searchResult.stream()
+                .map(e -> e.entrySet().stream()
+                        .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                        .limit(20)
+                        .collect(Collectors.toList()))
                 .collect(Collectors.toList());
-        System.out.println("ds " + maxDiff);
-        System.out.println("!!!!");
+        System.out.println("maxDiff is done, first 20: " +  maxDiffForKeySearch);
 
-        findKey(res.get(4));
+        findKey(searchResult.get(4));
 
         System.out.println("\n\n\n TIMEEEEEEE " + (System.nanoTime() / 1000000000. - t1));
 
@@ -64,16 +57,7 @@ public class App {
     }
 
     private static void findKey(Map<Integer, Double> maxDiffs) {
-        var keys = new int[7];
-        keys[0] = Integer.parseInt("0011000100110110", 2);
-        keys[1] = Integer.parseInt("0011001000110110", 2);
-        keys[2] = Integer.parseInt("0011001100110110", 2);
-        keys[3] = Integer.parseInt("0011010000110110", 2);
-        keys[4] = Integer.parseInt("0011010100110110", 2);
-        keys[5] = Integer.parseInt("0011011000110110", 2);
-        keys[6] = Integer.parseInt("0011011100110110", 2);
 
-        var h = new Heys();
         var rand = new Random(42);
         var mask16 = (1 << 16) - 1;
         var pts = new ArrayList<>();

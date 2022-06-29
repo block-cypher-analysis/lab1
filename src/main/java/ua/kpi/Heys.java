@@ -11,8 +11,7 @@ import java.util.stream.Collectors;
 public class Heys {
 
     private static final int threads = Runtime.getRuntime().availableProcessors();
-    private static final ExecutorService threadpool
-            = Executors.newFixedThreadPool(threads);
+    private static final ExecutorService threadpool = Executors.newFixedThreadPool(threads);
 
     @AllArgsConstructor
     private class DdtBatchClass implements Callable<Map<Integer, Map<Integer, Double>>> {
@@ -27,24 +26,15 @@ public class Heys {
 
             double probabilityBit = 1. / (1 << BLOCK_SIZE_BITS);
             Map<Integer, Map<Integer, Double>> ddtMap = new HashMap<>();
-
             System.out.println("dxStart " + dxStart + " dxEnd " + dxEnd + " id " + id);
-            var t = System.nanoTime() / 1000000000.;
             for (int dx = dxStart; dx < dxEnd; dx++) {
-                if (dx % 500 == 0) {
-                    System.out.println("id " + id + " dx " + dx + " t: " + (System.nanoTime() / 1000000000. - t));
-                }
-                t = System.nanoTime() / 1000000000.;
                 var dxMap = ddtMap.getOrDefault(dx, new HashMap<>());
                 for (int a = 0; a < (1 << BLOCK_SIZE_BITS); a++) {
                     int dy = encryptRound.get(a) ^ encryptRound.get(a ^ dx);
                     dxMap.put(dy, dxMap.getOrDefault(dy, 0.) + probabilityBit);
-                    if (a % 10000 == 0) {
-                        System.out.println("id " + id + " a " + a + " s: " + ddtMap.size() + " " + dxMap.size());
-                    }
+
                 }
                 var dxVal = dxMap.entrySet().stream().parallel().filter(e -> e.getValue() > pMin).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-                System.out.println("id " + id + " dx " + dx + " valsize: " + dxVal.size());
                 ddtMap.put(dx, dxVal);
 
             }
@@ -54,8 +44,8 @@ public class Heys {
     }
 
     private final int[] HeysSBox = new int[]{
-         //   0xA, 0x9, 0xD, 0x6, 0xE, 0xB, 0x4, 0x5, 0xF, 0x1, 0x3, 0xC, 0x7, 0x0, 0x8, 0x2
-               0x8, 0x0, 0xC, 0x4, 0x9, 0x6, 0x7, 0xB, 0x2, 0x3, 0x1, 0xF, 0x5, 0xE, 0xA, 0xD
+            //   0xA, 0x9, 0xD, 0x6, 0xE, 0xB, 0x4, 0x5, 0xF, 0x1, 0x3, 0xC, 0x7, 0x0, 0x8, 0x2
+            0x8, 0x0, 0xC, 0x4, 0x9, 0x6, 0x7, 0xB, 0x2, 0x3, 0x1, 0xF, 0x5, 0xE, 0xA, 0xD
             /*  , 0xF, 0x6, 0x5, 0x8, 0xE, 0xB, 0xA, 0x4, 0xC, 0x0, 0x3, 0x7, 0x2, 0x9, 0x1, 0xD*/
             // ,
             /*0x3, 0x8, 0xD, 0x9, 0x6, 0xB, 0xF, 0x0, 0x2, 0x5, 0xC, 0xA, 0x4, 0xE, 0x1, 0x7
@@ -75,7 +65,7 @@ public class Heys {
 
 
     private final int[] HeysSBoxInv = new int[]{
-           // 1: 0xD, 0x9, 0xF, 0xA, 0x6, 0x7, 0x3, 0xC, 0xE, 0x1, 0x0, 0x5, 0xB, 0x2, 0x4, 0x8
+            // 1: 0xD, 0x9, 0xF, 0xA, 0x6, 0x7, 0x3, 0xC, 0xE, 0x1, 0x0, 0x5, 0xB, 0x2, 0x4, 0x8
             0x1, 0xA, 0x8, 0x9, 0x3, 0xC, 0x5, 0x6, 0x0, 0x4, 0xE, 0x7, 0x2, 0xF, 0xD, 0xB
 
     };
@@ -149,20 +139,10 @@ public class Heys {
         return z;
     }
 
-   /* @staticmethod
-    def substitution(bytes):
-            return [(S[(bytes[0] >> WORD_LEN) & 0xf] << WORD_LEN)  ^ S[bytes[0] & 0xf], ( S[(bytes[1] >> WORD_LEN) & 0xf] << WORD_LEN) ^ S[bytes[1] & 0xf]]
-
-    @staticmethod
-    def substitution_(bytes):
-            return [(S_[(bytes[0] >> WORD_LEN) & 0xf] << WORD_LEN) ^ S_[bytes[0] & 0xf], (S_[(bytes[1] >> WORD_LEN) & 0xf] << WORD_LEN) ^ S_[bytes[1] & 0xf]]
-*/
-
     public Map<Integer, Map<Integer, Double>> computeRoundDdt() throws ExecutionException, InterruptedException {
 
 
         Map<Integer, Map<Integer, Double>> ddtMap = new HashMap<>();
-
         List<Future<Map<Integer, Map<Integer, Double>>>> futures = new ArrayList<>();
 
         Map<Integer, Integer> encRound = new HashMap<>();
@@ -183,45 +163,22 @@ public class Heys {
             ddtMap.putAll(futures.get(i).get());
         }
 
-            /*for (int a = 0; a < (1 << BLOCK_SIZE_BITS); a++) {
-                if (a % 1000 == 0) {
-                    System.out.println("a " + a);
-                }
-                for (int dx = 0; dx < (1 << BLOCK_SIZE_BITS); dx++) {
-                    int dy = encryptRound(a) ^ encryptRound(a ^ dx);
-                    var dxMap = ddtMap.getOrDefault(dx, new HashMap<>());
-                    dxMap.put(dy, dxMap.getOrDefault(dy, 0.) + probabilityBit);
-                    ddtMap.put(dx, dxMap);
-                }
-            }*/
         threadpool.shutdown();
         return ddtMap;
     }
-/*
-    public String decryptBlock(String bitSequence, long[][] roundKeys) {
-        ArrayUtils.reverse(roundKeys);
-        return encryptBlock(bitSequence, roundKeys);
 
-    }*/
 
-  
-/*
-        FactorialCalculator task = new FactorialCalculator(10);
-        System.out.println("Submitting Task ...");
+    public double[][] computeSboxDdt()  {
 
-        Future future = threadpool.submit(task);
+        var ddt = new double[HeysSBox.length][HeysSBox.length];
 
-        System.out.println("Task is submitted");
-
-        while (!future.isDone()) {
-            System.out.println("Task is not completed yet....");
-            Thread.sleep(1); //sleep for 1 millisecond before checking again
+        double probabilityBit = 1. / HeysSBox.length;
+        for (int dx = 0; dx < HeysSBox.length; dx++) {
+            for (int a = 0; a < HeysSBox.length; a++) {
+                int dy = HeysSBox[a] ^ HeysSBox[a ^ dx];
+                ddt[dx][dy] = ddt[dx][dy] + probabilityBit;
+            }
         }
-
-        System.out.println("Task is completed, let's check result");
-        long factorial = future.get();
-        System.out.println("Factorial of 1000000 is : " + factorial);
-
-        threadpool.shutdown();*/
-    //}
+        return ddt;
+    }
 }
